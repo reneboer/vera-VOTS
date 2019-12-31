@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+	<specVersion>
+		<major>1</major>
+		<minor>0</minor>
+	</specVersion>
+	<device>
+		<deviceType>urn:schemas-micasaverde-com:device:VOTS:1</deviceType>
+		<staticJson>D_TemperatureSensor1.json</staticJson>
+		<friendlyName>Virtual Outdoor Temperature Plugin</friendlyName>
+		<serviceList>
+			<service>
+				<serviceType>urn:schemas-micasaverde-com:service:VOTS:1</serviceType>
+				<serviceId>urn:micasaverde-com:serviceId:VOTS1</serviceId>
+				<SCPDURL>S_VirtualOutdoorTemperature1.xml</SCPDURL>
+			</service>
+			<service>
+				<serviceType>urn:schemas-upnp-org:service:TemperatureSensor:1</serviceType>
+				<serviceId>urn:upnp-org:serviceId:TemperatureSensor1</serviceId>
+				<SCPDURL>S_TemperatureSensor1.xml</SCPDURL>
+			</service>
+		</serviceList>
+	</device>
+</root>
