@@ -1,14 +1,17 @@
--- $Revision: 19 $
--- $Date: 2019-12-30 $
+-- $Revision: 20 $
+-- $Date: 2020-01-02 $
 -- Modified for other temp devices by Rene Boer
 -- Use for Other temperature devices or ambientweather.docs.apiary.io.close
+-- rev20 changes:
+--		Removed the one line of French.
+--		Reduced the minimum update time to five minutes (300 seconds)
 -- rev19 changes:
---					Fixes for ambient weather source.
---					Allow to specify sensor number for ambient weather source. Zero if default (tempf).
+--		Fixes for ambient weather source.
+--		Allow to specify sensor number for ambient weather source. Zero if default (tempf).
 -- rev18 changes:
---					Fix for handling negative temperatures for zwave thermostats.
---					Farhenheit are sent in whole numbers to zwave thermostats.
---					Fixes in GetWeatherSettings
+--		Fix for handling negative temperatures for zwave thermostats.
+--		Farhenheit are sent in whole numbers to zwave thermostats.
+--		Fixes in GetWeatherSettings
 -- Some info on setting temp in zwave thermostats https://forums.indigodomo.com/viewtopic.php?f=58&t=16025#p115284
 
 
@@ -35,7 +38,7 @@ local TASK = {
 	BUSY        = 1
 }
 local DISPLAY_SECONDS = 10
-local MIN_UPDATE_INTERVAL = 1200 -- seconds
+local MIN_UPDATE_INTERVAL = 300 -- seconds
 local WGET_TIMEOUT = 10
 local ZWAVE_THERMOSTAT_PNP_ID = "4711"
 local ZIGBEE_THERMOSTAT_PNP_ID = "6271"
@@ -63,11 +66,7 @@ end
 
 function ClearTask()
 	if (os.time() - g_lastTask >= DISPLAY_SECONDS) then
-		if lug_language == "fr" then
-			luup.task("Effancer...", TASK.SUCCESS, "VOTS", g_taskHandle)
-		else
-			luup.task("Clearing...", TASK.SUCCESS, "VOTS", g_taskHandle)
-		end
+		luup.task("Clearing...", TASK.SUCCESS, "VOTS", g_taskHandle)
 	end
 	debug("VOTS::ClearTask> Clearing task... ")
 end
