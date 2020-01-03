@@ -1,7 +1,9 @@
--- $Revision: 20 $
--- $Date: 2020-01-02 $
+-- $Revision: 21 $
+-- $Date: 2020-01-03 $
 -- Modified for other temp devices by Rene Boer
 -- Use for Other temperature devices or ambientweather.docs.apiary.io.close
+-- rev21 changes:
+--		Temp defaults to -99 to avoid confusion with misconfigured out door temp sensor.
 -- rev20 changes:
 --		Removed the one line of French.
 --		Reduced the minimum update time to five minutes (300 seconds)
@@ -227,9 +229,20 @@ local function GetWeatherSettings()
 	return true
 end
 
+local function CheckTemperature(tempc,tempFormat)
+	local temp = tempc
+	if tonumber(temp) == nil then
+		if string.lower(tempFormat) == "c" then
+			temp = -99
+		else
+			temp = -147
+		end
+	end	
+	return temp
+end
 
 local function GetTemperature()
-	local temp, tempFormat = "0.0", g_weatherSettings.tempFormat
+	local temp, tempFormat = 0, g_weatherSettings.tempFormat
 	
 	-- Check for temp source
 	if g_weatherSettings.tempSource == SRC_MIOS then
@@ -246,10 +259,11 @@ local function GetTemperature()
 			log("VOTS::GetTemperature> Invalid response from server: ".. content, 1)
 			return false
 		end
-		temp = data.temp .. ".0"
-		tempFormat = data.tempFormat
+		tempFormat = data.tempFormat or g_weatherSettings.tempFormat
+		temp = CheckTemperature(data.temp, tempFormat)
 	elseif g_weatherSettings.tempSource == SRC_DEV then
-		temp = luup.variable_get(g_weatherSettings.tempVarSID, g_weatherSettings.tempVarName, g_weatherSettings.tempDeviceID) or "0.0"
+		temp, _ = luup.variable_get(g_weatherSettings.tempVarSID, g_weatherSettings.tempVarName, g_weatherSettings.tempDeviceID)
+		temp = CheckTemperature(temp, tempFormat)
 	elseif g_weatherSettings.tempSource == SRC_AMB then
 		local url = string.format("https://api.ambientweather.net/v1/devices?applicationKey=%s&apiKey=%s",
 			g_weatherSettings.applicationKey, g_weatherSettings.apiKey)
@@ -267,16 +281,16 @@ local function GetTemperature()
 		end
 		if tonumber(g_weatherSettings.sensorNum) > 0 then
 			-- Get for specific sensor number.
-			temp = data.lastData["temp"..g_weatherSettings.sensorNum.."f"] or 0  
+			temp = CheckTemperature(data.lastData["temp"..g_weatherSettings.sensorNum.."f"], "F")
 		else
-			temp = data.lastData.tempf or 0  
+			temp = CheckTemperature(data.lastData.tempf, "F")
 		end
 		if string.lower(tempFormat) == "c" then
 			-- Ambient weather always returns value in Fahrenheit (?), so convert to Celsius rounded to 0.1.
 			temp = math.round(FtoC(temp), 0.1)
 		end	
-		temp = tostring(temp)
 	end
+	temp = tostring(temp)
 	if temp:find(".") == nil then temp = temp .. ".0" end
 	log("VOTS::GetTemperature> Got temperature: ".. temp)
 	return true, temp, tempFormat
@@ -285,9 +299,9 @@ end
 
 function UpdateValues()
 	local status, temperature, temperatureFormat = GetTemperature()
+	luup.call_delay("UpdateValues", g_updateInterval)
 	if not status then
 		log("VOTS::UpdateValues> Failed to get temperature", 1)
-		luup.call_delay("UpdateValues", g_updateInterval)
 		return false
 	end
 	SetOutdoorTemperature(temperature)
@@ -301,8 +315,6 @@ function UpdateValues()
 	else
 		SetZigBeeThermostatOutdoorTemperature(temperature, temperatureFormat)
 	end
-
-	luup.call_delay("UpdateValues", g_updateInterval)
 	return true
 end
 
@@ -389,6 +401,13 @@ local function GetPluginSettings()
 		if sensorNum == "-" then
 			sensorNum = "0"
 			luup.variable_set(SID.VOTS, "SensorNum", sensorNum, g_votsDevice)
+		else
+			-- Seonsor number must be between 0 and 10
+			sensorNum = tonumber(sensorNum)
+			if sensorNum < 0 or sensorNum > 10 then
+				sensorNum = "0"
+				luup.variable_set(SID.VOTS, "SensorNum", sensorNum, g_votsDevice)
+			end
 		end
 		debug("VOTS::GetPluginSettings> SensorNum = ".. sensorNum )
 		g_weatherSettings.sensorNum = sensorNum
